@@ -1,0 +1,2 @@
+# uconfig
+Reusable configuration manager
