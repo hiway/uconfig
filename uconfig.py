@@ -47,6 +47,9 @@ class uConfig(object):
     def _exists(self, key):
         return key in self._config
 
+    def _changed(self, key):
+        return self._default_config.get(key) != self._config.get(key)
+
     def _reset(self):
         self._config = self._default_config
         self._save_config()
