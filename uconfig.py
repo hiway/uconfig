@@ -34,6 +34,7 @@ explicitly write the config.
 import os
 import yaml
 import inspect
+from pathlib import Path
 
 defaults = {
     'config_root': '~',  # base folder where app-config folder will be created
@@ -104,20 +105,26 @@ class uConfig(object):
 
     def _get_or_create_config(self, default_config):
         assert isinstance(default_config, dict)
-        base_path = os.path.expanduser(defaults['config_root'])
-        app_path = os.path.join(base_path, defaults['config_folder_prefix'] + self._app_name)
-        config_path = os.path.join(app_path, self._config_name + defaults['config_extension'])
+
+        base_path = Path(os.path.expanduser(defaults['config_root']))
+        app_path = base_path.joinpath(defaults['config_folder_prefix'] + self._app_name)
+        config_path = app_path.joinpath(self._config_name + defaults['config_extension'])
         self._config_path = config_path
-        if not (os.path.exists(app_path) and os.path.isdir(app_path)):
-            os.mkdir(app_path)
-        if not os.path.exists(config_path):
-            with open(config_path, 'w') as config_file:
+
+        if not (app_path.exists() and app_path.is_dir()):
+            app_path.mkdir()
+
+        try:
+            with config_path.open('x') as config_file:
                 yaml.dump(default_config, config_file)
-        with open(config_path, 'r') as config_file:
+        except FileExistsError:
+            pass
+
+        with config_path.open('r') as config_file:
             return yaml.load(config_file)
 
     def _save(self):
-        with open(self._config_path, 'w') as config_file:
+        with self._config_path.open('w') as config_file:
             yaml.dump(self._config, config_file,
                       explicit_start=False,
                       default_flow_style=False)
