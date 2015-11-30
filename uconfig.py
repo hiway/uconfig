@@ -1,14 +1,61 @@
+"""
+Module Defaults:
+
+
+The default config_root is set to user's home directory, you can
+override it thus:
+
+    import uconfig
+    uconfig.defaults.update({'config_root': '/another/path/'})
+
+Default config_extension is set to '.yaml', you may change this,
+though uconfig currently continues to serialize using yaml, this
+limitation will change later.
+
+    uconfig.defaults.update({'config_extension': '.conf'})
+
+Default config_folder_prefix creates a hidden folder placing
+a dot before the folder name, you can change this to an empty
+string if you don't want to hide folders, or use another prefix.
+
+    uconfig.defaults.update({'config_folder_prefix': ''})
+
+Default auto_save is True, which ensures that every time you set
+a key on uConfig, it automatically writes the changes to file.
+You can set this to False, and use uConfig._save() to
+explicitly write the config.
+
+    uconfig.defaults.update({'auto_save': False})
+    conf = uconfig.uConfig('app', 'config', {})
+    conf._update({'some':'new', 'keys': True})
+    conf._save()
+"""
+
 import os
 import yaml
+import inspect
 
 defaults = {
-    'config_root': '~',
-    'config_extension': '.yaml',
+    'config_root': '~',  # base folder where app-config folder will be created
+    'config_extension': '.yaml',  # default file extensions (internally, it's still yaml)
+    'config_folder_prefix': '.',
+    'auto_save': True,
 }
 
 
 class uConfig(object):
+    """
+    A dict-like object that supports accessing keys via attributes,
+    automatically saves its contents to a config file defined by
+    app_name and config_name, automatically creates the config file
+    if it doesn't exist, and populates it with the default dictionary
+    provided.
+    """
     def __init__(self, app_name, config_name, default):
+        assert type(app_name) == str
+        assert type(config_name) == str
+        assert type(default) == dict
+
         self._app_name = app_name
         self._config_name = config_name
         self._default_config = default
@@ -25,7 +72,7 @@ class uConfig(object):
 
     def __setitem__(self, key, value):
         self._config[key] = value
-        self._save_config()
+        self._auto_save()
 
     def __iter__(self):
         for key, value in self._config.items():
@@ -36,13 +83,13 @@ class uConfig(object):
             object.__setattr__(self, key, value)
             return
         self._config[key] = value
-        self._save_config()
+        self._auto_save()
 
     def _update(self, dictionary):
         assert type(self._config) == dict
         assert type(dictionary) == dict
         self._config.update(dictionary)
-        self._save_config()
+        self._auto_save()
 
     def _exists(self, key):
         return key in self._config
@@ -52,11 +99,12 @@ class uConfig(object):
 
     def _reset(self):
         self._config = self._default_config
-        self._save_config()
+        self._auto_save()
 
     def _get_or_create_config(self, default_config):
+        assert type(default_config) == dict
         base_path = os.path.expanduser(defaults['config_root'])
-        app_path = os.path.join(base_path, '.' + self._app_name)
+        app_path = os.path.join(base_path, defaults['config_folder_prefix'] + self._app_name)
         config_path = os.path.join(app_path, self._config_name + defaults['config_extension'])
         self._config_path = config_path
         if not (os.path.exists(app_path) and os.path.isdir(app_path)):
@@ -67,8 +115,41 @@ class uConfig(object):
         with open(config_path, 'r') as config_file:
             return yaml.load(config_file)
 
-    def _save_config(self):
+    def _save(self):
         with open(self._config_path, 'w') as config_file:
             yaml.dump(self._config, config_file,
                       explicit_start=False,
                       default_flow_style=False)
+
+    def _auto_save(self):
+        if defaults['auto_save']:
+            self._save()
+
+    def _wizard(self, func, help_text=None):
+        assert callable(func)
+        assert type(help_text) == dict
+
+        sig = inspect.signature(func)
+        args_required = [v.name for p, v in sig.parameters.items() if type(v.default) == type]
+        args_optional = [(v.name, v.default) for p, v in sig.parameters.items() if type(v.default) != type]
+        config = {}
+
+        def print_help(name):
+            if help_text and help_text.get(name):
+                print(help_text[name])
+
+        for name in args_required:
+            print_help(name)
+            value = input('Required: {name}:'.format(name=name))
+            if value:
+                config.update({name: value})
+
+        for name, value in args_optional:
+            print_help(name)
+            newvalue = input('Optional: {name} (default: {value}):'.format(name=name, value=repr(value)))
+            if newvalue:
+                config.update({name: newvalue})
+            else:
+                config.update({name: value})
+
+        return config

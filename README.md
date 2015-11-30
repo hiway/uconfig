@@ -25,7 +25,7 @@ Minimalist configuration manager
     # Bulk update keys
     config._update({'aws_key': 'a new value', 'aws_key_secret': 'another new value'})
 
-    # Returns True is user has overridden the default value
+    # Returns True if user has overridden the default value
     config._changed('aws_key')
 
     # Every time you assign to uConfig, the config file is updated transparently
