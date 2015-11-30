@@ -53,9 +53,9 @@ class uConfig(object):
     """
 
     def __init__(self, app_name, config_name, default):
-        assert type(app_name) == str
-        assert type(config_name) == str
-        assert type(default) == dict
+        assert isinstance(app_name, str)
+        assert isinstance(config_name, str)
+        assert isinstance(default, dict)
 
         self._app_name = app_name
         self._config_name = config_name
@@ -87,8 +87,8 @@ class uConfig(object):
             yield key, value
 
     def _update(self, dictionary):
-        assert type(self._config) == dict
-        assert type(dictionary) == dict
+        assert isinstance(self._config, dict)
+        assert isinstance(dictionary, dict)
         self._config.update(dictionary)
         self._auto_save()
 
@@ -103,7 +103,7 @@ class uConfig(object):
         self._auto_save()
 
     def _get_or_create_config(self, default_config):
-        assert type(default_config) == dict
+        assert isinstance(default_config, dict)
         base_path = os.path.expanduser(defaults['config_root'])
         app_path = os.path.join(base_path, defaults['config_folder_prefix'] + self._app_name)
         config_path = os.path.join(app_path, self._config_name + defaults['config_extension'])
@@ -128,11 +128,11 @@ class uConfig(object):
 
     def _wizard(self, func, help_text=None):
         assert callable(func)
-        assert type(help_text) == dict
+        assert isinstance(help_text, dict)
 
         sig = inspect.signature(func)
-        args_required = [v.name for p, v in sig.parameters.items() if type(v.default) == type]
-        args_optional = [(v.name, v.default) for p, v in sig.parameters.items() if type(v.default) != type]
+        args_required = [v.name for p, v in sig.parameters.items() if isinstance(v.default, type)]
+        args_optional = [(v.name, v.default) for p, v in sig.parameters.items() if isinstance(v.default, type)]
         config = {}
 
         def print_help(name):
