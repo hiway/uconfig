@@ -138,8 +138,8 @@ class uConfig(object):
         assert isinstance(help_text, dict)
 
         sig = inspect.signature(func)
-        args_required = [v.name for p, v in sig.parameters.items() if isinstance(v.default, type)]
-        args_optional = [(v.name, v.default) for p, v in sig.parameters.items() if isinstance(v.default, type)]
+        args_required = [v.name for p, v in sig.parameters.items() if v.default is inspect.Parameter.empty]
+        args_optional = [(v.name, v.default) for p, v in sig.parameters.items() if not v.default is inspect.Parameter.empty]
         config = {}
 
         def print_help(name):
