@@ -114,9 +114,11 @@ class uConfig(object):
         if not (app_path.exists() and app_path.is_dir()):
             app_path.mkdir()
 
-        if not config_path.exists():
-            with config_path.open('w') as config_file:
+        try:
+            with config_path.open('x') as config_file:
                 yaml.dump(default_config, config_file)
+        except FileExistsError:
+            pass
 
         with config_path.open('r') as config_file:
             return yaml.load(config_file)
