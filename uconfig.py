@@ -51,6 +51,7 @@ class uConfig(object):
     if it doesn't exist, and populates it with the default dictionary
     provided.
     """
+
     def __init__(self, app_name, config_name, default):
         assert type(app_name) == str
         assert type(config_name) == str
@@ -67,6 +68,13 @@ class uConfig(object):
             return object.__getattribute__(self, item)
         return self._config.get(item)
 
+    def __setattr__(self, key, value):
+        if key.startswith('_'):
+            object.__setattr__(self, key, value)
+            return
+        self._config[key] = value
+        self._auto_save()
+
     def __getitem__(self, item):
         return self._config.get(item)
 
@@ -77,13 +85,6 @@ class uConfig(object):
     def __iter__(self):
         for key, value in self._config.items():
             yield key, value
-
-    def __setattr__(self, key, value):
-        if key.startswith('_'):
-            object.__setattr__(self, key, value)
-            return
-        self._config[key] = value
-        self._auto_save()
 
     def _update(self, dictionary):
         assert type(self._config) == dict
