@@ -62,6 +62,13 @@ class uConfig(object):
         self._config_name = config_name
         self._default_config = default
         self._config = {}
+
+        # Path related actions 
+        base_path = Path(os.path.expanduser(defaults['config_root']))
+        self._app_path = base_path.joinpath(defaults['config_folder_prefix'] + self._app_name)
+        config_path = self._app_path.joinpath(self._config_name + defaults['config_extension'])
+        self._config_path = config_path
+
         self._config = self._get_or_create_config(default)
 
     def __getattribute__(self, item):
@@ -106,21 +113,16 @@ class uConfig(object):
     def _get_or_create_config(self, default_config):
         assert isinstance(default_config, dict)
 
-        base_path = Path(os.path.expanduser(defaults['config_root']))
-        app_path = base_path.joinpath(defaults['config_folder_prefix'] + self._app_name)
-        config_path = app_path.joinpath(self._config_name + defaults['config_extension'])
-        self._config_path = config_path
-
-        if not (app_path.exists() and app_path.is_dir()):
-            app_path.mkdir()
+        if not (self._app_path.exists() and self._app_path.is_dir()):
+            self._app_path.mkdir()
 
         try:
-            with config_path.open('x') as config_file:
+            with self._config_path.open('x') as config_file:
                 yaml.dump(default_config, config_file)
         except FileExistsError:
             pass
 
-        with config_path.open('r') as config_file:
+        with self._config_path.open('r') as config_file:
             return yaml.load(config_file)
 
     def _save(self):
@@ -161,3 +163,12 @@ class uConfig(object):
                 config.update({name: value})
 
         return config
+
+    def __repr__(self):
+        content = ("Config path: {self._config_path}\n\n"
+                   "Config content:\n"
+                   "{content}").format(self=self,
+                                       content=yaml.dump(self._config,
+                                                         explicit_start=False,
+                                                         default_flow_style=False))
+        return content
