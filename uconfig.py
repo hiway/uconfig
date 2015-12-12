@@ -95,7 +95,7 @@ class uConfig(object):
             yield key, value
 
     def __dir__(self):
-        return list(self._config)
+        return sorted(self._config)
 
     def _update(self, dictionary):
         assert isinstance(self._config, dict)
