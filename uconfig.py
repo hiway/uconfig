@@ -94,6 +94,9 @@ class uConfig(object):
         for key, value in self._config.items():
             yield key, value
 
+    def __dir__(self):
+        return sorted(self._config)
+
     def _update(self, dictionary):
         assert isinstance(self._config, dict)
         assert isinstance(dictionary, dict)
